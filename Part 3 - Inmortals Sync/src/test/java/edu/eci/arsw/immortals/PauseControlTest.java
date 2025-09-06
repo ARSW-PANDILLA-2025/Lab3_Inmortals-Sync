@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Timeout;
 
 /**
  * Tests específicos para validar el mecanismo de pausa correcta.
- * 
+ *
  * Punto 4: Pausa correcta - asegura que todos los hilos queden pausados
  * antes de leer/imprimir la salud; implementa Resume (ya disponible).
  */
@@ -21,6 +21,7 @@ class PauseControlTest {
     private ImmortalManager manager;
 
     @AfterEach
+    @SuppressWarnings("unused")
     void tearDown() {
         if (manager != null) {
             manager.stop();

@@ -42,7 +42,7 @@ public final class TransferService {
           }
         } finally { a.unlock(); }
       }
-      Thread.sleep(ThreadLocalRandom.current().nextInt(1, 5));
+      java.util.concurrent.locks.LockSupport.parkNanos(ThreadLocalRandom.current().nextInt(1, 5) * 1_000_000L);
     }
     throw new InterruptedException("transferTryLock timed out");
   }

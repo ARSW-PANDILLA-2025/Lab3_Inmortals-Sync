@@ -15,6 +15,7 @@ class InvariantValidationTest {
     private ImmortalManager manager;
 
     @AfterEach
+    @SuppressWarnings("unused")
     void tearDown() {
         if (manager != null) {
             manager.stop();

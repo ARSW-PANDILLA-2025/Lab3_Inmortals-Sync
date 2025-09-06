@@ -16,6 +16,7 @@ public final class ImmortalManager implements AutoCloseable {
   private final ScoreBoard scoreBoard = new ScoreBoard();
   private ExecutorService exec;
 
+  @SuppressWarnings("unused")
   private final String fightMode;
   private final int initialHealth;
   private final int damage;
@@ -28,45 +29,54 @@ public final class ImmortalManager implements AutoCloseable {
     this.fightMode = fightMode;
     this.initialHealth = initialHealth;
     this.damage = damage;
-    for (int i=0;i<n;i++) {
-      population.add(new Immortal("Immortal-"+i, initialHealth, damage, population, scoreBoard, controller));
+    for (int i = 0; i < n; i++) {
+      population.add(new Immortal("Immortal-" + i, initialHealth, damage, population, scoreBoard, controller));
     }
   }
 
   public synchronized void start() {
-    if (exec != null) stop();
+    if (exec != null)
+      stop();
     exec = Executors.newVirtualThreadPerTaskExecutor();
     for (Immortal im : population) {
       futures.add(exec.submit(im));
     }
   }
 
-  public void pause() throws InterruptedException { 
-    controller.pause(); 
+  public void pause() throws InterruptedException {
+    controller.pause();
   }
-  
+
   /**
    * Pausa la simulación sin bloquear (para compatibilidad).
    */
-  public void pauseNonBlocking() { 
-    controller.pauseNonBlocking(); 
+  public void pauseNonBlocking() {
+    controller.pauseNonBlocking();
   }
-  
-  public void resume() { controller.resume(); }
+
+  public void resume() {
+    controller.resume();
+  }
+
   public void stop() {
-    for (Immortal im : population) im.stop();
-    if (exec != null) exec.shutdownNow();
+    for (Immortal im : population)
+      im.stop();
+    if (exec != null)
+      exec.shutdownNow();
   }
 
   public int aliveCount() {
     int c = 0;
-    for (Immortal im : population) if (im.isAlive()) c++;
+    for (Immortal im : population)
+      if (im.isAlive())
+        c++;
     return c;
   }
 
   public long totalHealth() {
     long sum = 0;
-    for (Immortal im : population) sum += im.getHealth();
+    for (Immortal im : population)
+      sum += im.getHealth();
     return sum;
   }
 
@@ -84,7 +94,9 @@ public final class ImmortalManager implements AutoCloseable {
 
   /**
    * Valida si se cumple el invariante.
-   * @return true si la salud actual coincide con la esperada, false en caso contrario
+   *
+   * @return true si la salud actual coincide con la esperada, false en caso
+   *         contrario
    */
   public boolean validateInvariant() {
     return totalHealth() == expectedTotalHealth();
@@ -98,50 +110,53 @@ public final class ImmortalManager implements AutoCloseable {
     long expected = expectedTotalHealth();
     long fights = scoreBoard.totalFights();
     long initialTotal = (long) population.size() * initialHealth;
-    
+
     return String.format(
         "Invariant Analysis:%n" +
-        "  Immortals: %d%n" +
-        "  Initial health each: %d%n" +
-        "  Damage per fight: %d%n" +
-        "  Total fights: %d%n" +
-        "  Initial total health: %d%n" +
-        "  Expected health loss: %d (fights * damage/2 = %d * %d/2)%n" +
-        "  Expected total health: %d%n" +
-        "  Actual total health: %d%n" +
-        "  Invariant valid: %s%n" +
-        "  Difference: %d%n",
-        population.size(), initialHealth, damage, fights, 
+            "  Immortals: %d%n" +
+            "  Initial health each: %d%n" +
+            "  Damage per fight: %d%n" +
+            "  Total fights: %d%n" +
+            "  Initial total health: %d%n" +
+            "  Expected health loss: %d (fights * damage/2 = %d * %d/2)%n" +
+            "  Expected total health: %d%n" +
+            "  Actual total health: %d%n" +
+            "  Invariant valid: %s%n" +
+            "  Difference: %d%n",
+        population.size(), initialHealth, damage, fights,
         initialTotal, fights * (damage / 2), fights, damage,
         expected, actual, validateInvariant() ? "YES" : "NO",
-        actual - expected
-    );
+        actual - expected);
   }
 
   public List<Immortal> populationSnapshot() {
     return Collections.unmodifiableList(new ArrayList<>(population));
   }
 
-  public ScoreBoard scoreBoard() { return scoreBoard; }
-  public PauseController controller() { return controller; }
-  
+  public ScoreBoard scoreBoard() {
+    return scoreBoard;
+  }
+
+  public PauseController controller() {
+    return controller;
+  }
+
   /**
    * Obtiene información sobre el estado de pausa.
    */
   public String getPauseInfo() {
     return String.format(
         "Pause Status:%n" +
-        "  Paused: %s%n" +
-        "  Active threads: %d%n" +
-        "  Paused threads: %d%n" +
-        "  All threads paused: %s%n",
+            "  Paused: %s%n" +
+            "  Active threads: %d%n" +
+            "  Paused threads: %d%n" +
+            "  All threads paused: %s%n",
         controller.paused() ? "YES" : "NO",
         controller.getActiveThreads(),
         controller.getPausedThreads(),
-        controller.allThreadsPaused() ? "YES" : "NO"
-    );
+        controller.allThreadsPaused() ? "YES" : "NO");
   }
-  
+
   /**
    * Obtiene información de debug detallada del controlador de pausa.
    */
@@ -149,5 +164,12 @@ public final class ImmortalManager implements AutoCloseable {
     return controller.getDebugInfo();
   }
 
-  @Override public void close() { stop(); }
+  @Override
+  public void close() {
+    stop();
+  }
+
+  public List<Future<?>> getFutures() {
+    return futures;
+  }
 }
