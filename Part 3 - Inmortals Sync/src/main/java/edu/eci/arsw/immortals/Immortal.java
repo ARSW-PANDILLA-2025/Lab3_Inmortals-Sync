@@ -37,20 +37,13 @@ public final class Immortal implements Runnable {
         if (!running) break;
         
         var opponent = pickOpponent();
-        if (opponent == null) {
-          controller.awaitIfPaused();
-          continue;
-        }
+        if (opponent == null) continue;
         
         String mode = System.getProperty("fight", "ordered");
         if ("naive".equalsIgnoreCase(mode)) fightNaive(opponent);
         else fightOrdered(opponent);
         
-        controller.awaitIfPaused();
-        
-        if (running) {
-          controller.awaitIfPaused();
-        }
+        Thread.sleep(2);
       }
     } catch (InterruptedException ie) {
       Thread.currentThread().interrupt();

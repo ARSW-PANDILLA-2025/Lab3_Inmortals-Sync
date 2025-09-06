@@ -73,7 +73,7 @@ public final class ControlFrame extends JFrame {
     setVisible(true);
   }
 
-  private void onStart(ActionEvent e) {
+  private void onStart(@SuppressWarnings("unused") ActionEvent e) {
     safeStop();
     int n = (Integer) countSpinner.getValue();
     int health = (Integer) healthSpinner.getValue();
@@ -85,14 +85,12 @@ public final class ControlFrame extends JFrame {
       .formatted(n, health, damage, fight));
   }
 
-  private void onPauseAndCheck(ActionEvent e) {
+  private void onPauseAndCheck(@SuppressWarnings("unused") ActionEvent e) {
     if (manager == null) return;
     
     try {
-      // Registrar tiempo de inicio de pausa
       long startTime = System.currentTimeMillis();
       
-      // Pausar y esperar a que todos los hilos estén pausados
       manager.pause();
       
       long pauseTime = System.currentTimeMillis() - startTime;
@@ -115,11 +113,9 @@ public final class ControlFrame extends JFrame {
       sb.append("Score (fights): ").append(manager.scoreBoard().totalFights()).append('\n');
       sb.append("--------------------------------\n");
       
-      // Información del estado de pausa
       sb.append(manager.getPauseInfo());
       sb.append("--------------------------------\n");
       
-      // Información del invariante
       sb.append(manager.getInvariantInfo());
       
       output.setText(sb.toString());
@@ -132,12 +128,12 @@ public final class ControlFrame extends JFrame {
     }
   }
 
-  private void onResume(ActionEvent e) {
+  private void onResume(@SuppressWarnings("unused") ActionEvent e) {
     if (manager == null) return;
     manager.resume();
   }
 
-  private void onStop(ActionEvent e) { safeStop(); }
+  private void onStop(@SuppressWarnings("unused") ActionEvent e) { safeStop(); }
 
   private void safeStop() {
     if (manager != null) {
