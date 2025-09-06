@@ -1,10 +1,10 @@
 package edu.eci.arsw.immortals;
 
-import edu.eci.arsw.concurrency.PauseController;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
+
+import edu.eci.arsw.concurrency.PauseController;
 
 public final class Immortal implements Runnable {
   private final String name;

@@ -1,12 +1,24 @@
 package edu.eci.arsw.highlandersim;
 
-import edu.eci.arsw.immortals.Immortal;
-import edu.eci.arsw.immortals.ImmortalManager;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.util.List;
+
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextArea;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
+
+import edu.eci.arsw.immortals.Immortal;
+import edu.eci.arsw.immortals.ImmortalManager;
 
 public final class ControlFrame extends JFrame {
 
@@ -75,19 +87,49 @@ public final class ControlFrame extends JFrame {
 
   private void onPauseAndCheck(ActionEvent e) {
     if (manager == null) return;
-    manager.pause();
-    List<Immortal> pop = manager.populationSnapshot();
-    long sum = 0;
-    StringBuilder sb = new StringBuilder();
-    for (Immortal im : pop) {
-      int h = im.getHealth();
-      sum += h;
-      sb.append(String.format("%-14s : %5d%n", im.name(), h));
+    
+    try {
+      // Registrar tiempo de inicio de pausa
+      long startTime = System.currentTimeMillis();
+      
+      // Pausar y esperar a que todos los hilos estén pausados
+      manager.pause();
+      
+      long pauseTime = System.currentTimeMillis() - startTime;
+      
+      List<Immortal> pop = manager.populationSnapshot();
+      long sum = 0;
+      StringBuilder sb = new StringBuilder();
+      
+      sb.append("=== PAUSE & CHECK RESULTS ===\n");
+      sb.append(String.format("Pause completed in %d ms\n", pauseTime));
+      sb.append("--------------------------------\n");
+      
+      for (Immortal im : pop) {
+        int h = im.getHealth();
+        sum += h;
+        sb.append(String.format("%-14s : %5d%n", im.name(), h));
+      }
+      sb.append("--------------------------------\n");
+      sb.append("Total Health: ").append(sum).append('\n');
+      sb.append("Score (fights): ").append(manager.scoreBoard().totalFights()).append('\n');
+      sb.append("--------------------------------\n");
+      
+      // Información del estado de pausa
+      sb.append(manager.getPauseInfo());
+      sb.append("--------------------------------\n");
+      
+      // Información del invariante
+      sb.append(manager.getInvariantInfo());
+      
+      output.setText(sb.toString());
+      
+    } catch (InterruptedException ie) {
+      Thread.currentThread().interrupt();
+      output.setText("Pause operation was interrupted: " + ie.getMessage());
+    } catch (Exception ex) {
+      output.setText("Error during pause: " + ex.getMessage());
     }
-    sb.append("--------------------------------\n");
-    sb.append("Total Health: ").append(sum).append('\n');
-    sb.append("Score (fights): ").append(manager.scoreBoard().totalFights()).append('\n');
-    output.setText(sb.toString());
   }
 
   private void onResume(ActionEvent e) {

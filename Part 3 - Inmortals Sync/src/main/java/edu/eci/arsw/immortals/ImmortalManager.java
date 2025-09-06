@@ -1,13 +1,13 @@
 package edu.eci.arsw.immortals;
 
-import edu.eci.arsw.concurrency.PauseController;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+
+import edu.eci.arsw.concurrency.PauseController;
 
 public final class ImmortalManager implements AutoCloseable {
   private final List<Immortal> population = new ArrayList<>();
@@ -41,7 +41,17 @@ public final class ImmortalManager implements AutoCloseable {
     }
   }
 
-  public void pause() { controller.pause(); }
+  public void pause() throws InterruptedException { 
+    controller.pause(); 
+  }
+  
+  /**
+   * Pausa la simulación sin bloquear (para compatibilidad).
+   */
+  public void pauseNonBlocking() { 
+    controller.pauseNonBlocking(); 
+  }
+  
   public void resume() { controller.resume(); }
   public void stop() {
     for (Immortal im : population) im.stop();
@@ -60,12 +70,84 @@ public final class ImmortalManager implements AutoCloseable {
     return sum;
   }
 
+  /**
+   * Calcula la salud total esperada según el invariante.
+   * Invariante: Salud_esperada = N * H_inicial - F * (damage/2)
+   * donde F es el número de peleas registradas.
+   */
+  public long expectedTotalHealth() {
+    long totalFights = scoreBoard.totalFights();
+    long initialTotal = (long) population.size() * initialHealth;
+    long lostHealth = totalFights * (damage / 2);
+    return initialTotal - lostHealth;
+  }
+
+  /**
+   * Valida si se cumple el invariante.
+   * @return true si la salud actual coincide con la esperada, false en caso contrario
+   */
+  public boolean validateInvariant() {
+    return totalHealth() == expectedTotalHealth();
+  }
+
+  /**
+   * Obtiene información detallada del invariante para debugging.
+   */
+  public String getInvariantInfo() {
+    long actual = totalHealth();
+    long expected = expectedTotalHealth();
+    long fights = scoreBoard.totalFights();
+    long initialTotal = (long) population.size() * initialHealth;
+    
+    return String.format(
+        "Invariant Analysis:%n" +
+        "  Immortals: %d%n" +
+        "  Initial health each: %d%n" +
+        "  Damage per fight: %d%n" +
+        "  Total fights: %d%n" +
+        "  Initial total health: %d%n" +
+        "  Expected health loss: %d (fights * damage/2 = %d * %d/2)%n" +
+        "  Expected total health: %d%n" +
+        "  Actual total health: %d%n" +
+        "  Invariant valid: %s%n" +
+        "  Difference: %d%n",
+        population.size(), initialHealth, damage, fights, 
+        initialTotal, fights * (damage / 2), fights, damage,
+        expected, actual, validateInvariant() ? "YES" : "NO",
+        actual - expected
+    );
+  }
+
   public List<Immortal> populationSnapshot() {
     return Collections.unmodifiableList(new ArrayList<>(population));
   }
 
   public ScoreBoard scoreBoard() { return scoreBoard; }
   public PauseController controller() { return controller; }
+  
+  /**
+   * Obtiene información sobre el estado de pausa.
+   */
+  public String getPauseInfo() {
+    return String.format(
+        "Pause Status:%n" +
+        "  Paused: %s%n" +
+        "  Active threads: %d%n" +
+        "  Paused threads: %d%n" +
+        "  All threads paused: %s%n",
+        controller.paused() ? "YES" : "NO",
+        controller.getActiveThreads(),
+        controller.getPausedThreads(),
+        controller.allThreadsPaused() ? "YES" : "NO"
+    );
+  }
+  
+  /**
+   * Obtiene información de debug detallada del controlador de pausa.
+   */
+  public String getDebugPauseInfo() {
+    return controller.getDebugInfo();
+  }
 
   @Override public void close() { stop(); }
 }
