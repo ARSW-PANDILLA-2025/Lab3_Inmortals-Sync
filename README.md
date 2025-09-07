@@ -71,7 +71,8 @@ Lab3_Inmortals-Sync/
     └── README.md                        # Part III instructions and UI guide
 ```
 ## Component Diagram
-![alt text](image.png)
+<img width="749" height="554" alt="image" src="https://github.com/user-attachments/assets/6d9643bb-072a-4d8f-930a-2db9e6f50369" />
+
 
 ## 🚀 Quick Start
 
