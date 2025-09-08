@@ -6,8 +6,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Controlador de pausa mejorado que garantiza que todos los hilos
- * estén efectivamente pausados antes de continuar.
+ * Controlador de pausa robusto que garantiza que los hilos
+ * se detengan antes de tomar snapshots del estado.
  */
 public final class PauseController {
 
@@ -20,38 +20,30 @@ public final class PauseController {
     private final AtomicInteger threadsWaitingToPause = new AtomicInteger(0);
 
     /**
-     * Pausa la ejecución y espera hasta que todos los hilos estén pausados.
-     * Usa un timeout para evitar bloqueos indefinidos.
+     * Pausa la ejecución y espera hasta que los hilos reporten su pausa.
      */
     public void pause() throws InterruptedException {
         lock.lock();
         try {
             paused = true;
 
-            if (registeredThreads.get() == 0) {
-                return;
-            }
+            if (registeredThreads.get() == 0) return;
 
             long deadline = System.currentTimeMillis() + 3000;
             int expectedThreads = registeredThreads.get();
 
             while (threadsWaitingToPause.get() < expectedThreads &&
-                    System.currentTimeMillis() < deadline) {
-
+                   System.currentTimeMillis() < deadline) {
                 allPaused.await(100, TimeUnit.MILLISECONDS);
-
                 expectedThreads = registeredThreads.get();
-                if (expectedThreads == 0)
-                    break;
+                if (expectedThreads == 0) break;
             }
 
-            int finalWaiting = threadsWaitingToPause.get();
-            int finalRegistered = registeredThreads.get();
-
-            if (finalWaiting < finalRegistered && finalRegistered > 0) {
-                System.err.println("Warning: No todos los hilos se pausaron en el tiempo esperado. " +
-                        "Registrados: " + finalRegistered +
-                        ", Pausados: " + finalWaiting);
+            if (threadsWaitingToPause.get() < registeredThreads.get() &&
+                registeredThreads.get() > 0) {
+                System.err.printf(
+                        "⚠ Warning: No todos los hilos se pausaron. Registrados=%d, Pausados=%d%n",
+                        registeredThreads.get(), threadsWaitingToPause.get());
             }
 
         } finally {
@@ -59,9 +51,6 @@ public final class PauseController {
         }
     }
 
-    /**
-     * Versión no-bloqueante de pause() para compatibilidad.
-     */
     public void pauseNonBlocking() {
         lock.lock();
         try {
@@ -71,9 +60,6 @@ public final class PauseController {
         }
     }
 
-    /**
-     * Reanuda todos los hilos pausados.
-     */
     public void resume() {
         lock.lock();
         try {
@@ -86,13 +72,9 @@ public final class PauseController {
         }
     }
 
-    public boolean paused() {
-        return paused;
-    }
+    public boolean paused() { return paused; }
 
-    public void registerThread() {
-        registeredThreads.incrementAndGet();
-    }
+    public void registerThread() { registeredThreads.incrementAndGet(); }
 
     public void unregisterThread() {
         registeredThreads.decrementAndGet();
@@ -104,12 +86,8 @@ public final class PauseController {
         }
     }
 
-    /**
-     * Llamar desde los hilos para esperar si el controlador está pausado.
-     */
     public void awaitIfPaused() throws InterruptedException {
-        if (!paused)
-            return;
+        if (!paused) return;
 
         lock.lockInterruptibly();
         try {
@@ -130,22 +108,13 @@ public final class PauseController {
         }
     }
 
-    public int getActiveThreads() {
-        return Math.max(0, registeredThreads.get());
-    }
-
-    public int getPausedThreads() {
-        return Math.max(0, threadsWaitingToPause.get());
-    }
+    public int getActiveThreads() { return Math.max(0, registeredThreads.get()); }
+    public int getPausedThreads() { return Math.max(0, threadsWaitingToPause.get()); }
 
     public boolean allThreadsPaused() {
         int registered = registeredThreads.get();
         int pausing = threadsWaitingToPause.get();
-
-        if (registered == 0) {
-            return paused;
-        }
-
+        if (registered == 0) return paused;
         return paused && (pausing >= registered);
     }
 
